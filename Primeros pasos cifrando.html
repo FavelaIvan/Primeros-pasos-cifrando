@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Cifrado: César y Atbash</title>
+    <style>
+        /* [REF-1] */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 500px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        textarea {
+            resize: vertical;
+            height: 80px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .btn-encrypt {
+            background-color: #27ae60;
+            color: white;
+        }
+        .btn-encrypt:hover {
+            background-color: #219150;
+        }
+        .btn-decrypt {
+            background-color: #2980b9;
+            color: white;
+        }
+        .btn-decrypt:hover {
+            background-color: #1f6391;
+        }
+        .result-area {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f6f3;
+            border-left: 5px solid #1abc9c;
+            border-radius: 4px;
+        }
+        .result-area h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #16a085;
+        }
+        #output-text {
+            word-wrap: break-word;
+            font-family: monospace;
+            color: #2c3e50;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            background: #eee;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Cifrador Pro</h1>
+    
+    <div id="module-indicator" class="status-badge">Módulo actual: César</div>
+
+    <div class="form-group">
+        <label for="method">Seleccionar Método:</label>
+        <select id="method" onchange="updateUI()">
+            <option value="cesar">Cifrado César</option>
+            <option value="atbash">Cifrado Atbash</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="alphabet">Conjunto de Caracteres (Alfabeto):</label>
+        <input type="text" id="alphabet" value="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789">
+    </div>
+
+    <div class="form-group" id="shift-group">
+        <label for="shift">Desplazamiento (Solo para César):</label>
+        <input type="number" id="shift" value="3">
+    </div>
+
+    <div class="form-group">
+        <label for="input-text">Oración / Mensaje:</label>
+        <textarea id="input-text" placeholder="Escribe tu mensaje aquí..."></textarea>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn-encrypt" onclick="process(true)">Cifrar</button>
+        <button class="btn-decrypt" onclick="process(false)">Descifrar</button>
+    </div>
+
+    <div class="result-area" id="result-box" style="display:none;">
+        <h3>Resultado:</h3>
+        <p id="output-text"></p>
+    </div>
+</div>
+
+<script>
+    // [REF-4]
+    function updateUI() {
+        const method = document.getElementById('method').value;
+        const shiftGroup = document.getElementById('shift-group');
+        const indicator = document.getElementById('module-indicator');
+        
+        if (method === 'atbash') {
+            shiftGroup.style.display = 'none';
+            indicator.innerText = "Módulo actual: Atbash";
+        } else {
+            shiftGroup.style.display = 'block';
+            indicator.innerText = "Módulo actual: César";
+        }
+    }
+
+    // [REF-5]
+    function process(isEncrypt) {
+        const method = document.getElementById('method').value;
+        const alphabet = document.getElementById('alphabet').value;
+        const inputText = document.getElementById('input-text').value;
+        const shift = parseInt(document.getElementById('shift').value);
+        let result = "";
+
+        if (alphabet.length === 0) {
+            alert("El alfabeto no puede estar vacío");
+            return;
+        }
+
+        if (method === 'cesar') {
+            result = runCesar(inputText, alphabet, isEncrypt ? shift : -shift);
+        } else {
+            result = runAtbash(inputText, alphabet);
+        }
+
+        const resultBox = document.getElementById('result-box');
+        const outputText = document.getElementById('output-text');
+        resultBox.style.display = 'block';
+        outputText.innerText = result;
+    }
+
+    // [REF-6]
+    function runCesar(text, alpha, shift) {
+        let out = "";
+        const n = alpha.length;
+        
+        for (let char of text) {
+            const index = alpha.indexOf(char);
+            if (index === -1) {
+                out += char; 
+            } else {
+                let newIndex = (index + shift) % n;
+                if (newIndex < 0) newIndex += n; 
+                out += alpha[newIndex];
+            }
+        }
+        return out;
+    }
+
+    // [REF-7]
+    function runAtbash(text, alpha) {
+        let out = "";
+        const n = alpha.length;
+        
+        for (let char of text) {
+            const index = alpha.indexOf(char);
+            if (index === -1) {
+                out += char;
+            } else {
+                const newIndex = n - 1 - index;
+                out += alpha[newIndex];
+            }
+        }
+        return out;
+    }
+</script>
+
+</body>
+</html>
